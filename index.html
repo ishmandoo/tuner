@@ -210,7 +210,8 @@
         },
         "Banjo": {
             "tunings": {
-                "C tuning": ["G4", "C3", "G3", "B3", "D4"],
+                "Standard (Open G)": ["G4", "D3", "G3", "B3", "D4"],
+                "C Tuning": ["G4", "C3", "G3", "B3", "D4"],
                 "Double C": ["G4", "C3", "G3", "C4", "D4"],
                 "Sawmill": ["G4", "D3", "G3", "C4", "D4"],
                 "Open D": ["F#4", "D3", "F#3", "A3", "D4"],
@@ -226,28 +227,56 @@
     };
 
 
-    // create web audio api context
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // create Oscillator node
-    const oscillator = audioCtx.createOscillator();
-    let oscillatorStarted = false;
+    let oscillator, gain, lfo;
 
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    function createSound() {
+        // Oscillator for the main tone
+        oscillator = audioCtx.createOscillator();
+        oscillator.type = "triangle"; // Use triangle wave for a richer tone
+
+        // Gain node for envelope
+        gain = audioCtx.createGain();
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+
+        // LFO for vibrato
+        lfo = audioCtx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.setValueAtTime(5, audioCtx.currentTime); // 5Hz vibrato
+
+        const vibratoGain = audioCtx.createGain();
+        vibratoGain.gain.setValueAtTime(1, audioCtx.currentTime);
+
+        lfo.connect(vibratoGain);
+        vibratoGain.connect(oscillator.frequency);
+
+        oscillator.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        oscillator.start();
+        lfo.start();
+    }
 
     function startTone(frequency) {
-        if (!oscillatorStarted) {
-            oscillator.start();
-            oscillatorStarted = true;
-        }
-        oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-        oscillator.connect(audioCtx.destination);
+        if (!oscillator) createSound();
+
+        const now = audioCtx.currentTime;
+
+        oscillator.frequency.setValueAtTime(frequency, now);
+
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.setTargetAtTime(0.6, now + 0.1, 1);    // Sustain
     }
 
     function stopTone() {
-        oscillator.disconnect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(gain.gain.value, now);
+        gain.gain.linearRampToValueAtTime(0, now + 0.1);  // Release
     }
+
 
 
     const instrumentsSelect = document.getElementById("instruments");
