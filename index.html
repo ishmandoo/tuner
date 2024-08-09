@@ -10,8 +10,14 @@
 </head>
 
 <style>
-    #strings {
+    #right {
         text-align: center;
+    }
+
+    #strings {
+        display: inline-block;
+        text-align: center;
+        margin: 0 auto;
     }
 
     #strings>button {
@@ -27,11 +33,24 @@
 
 <body>
     <main class="container">
-        <h1>Banjo Tuner</h1>
-        <select id="tunings">
-        </select>
-        <div id="strings"></div>
-        <button class="stop contrast" onclick="stopTone()">Stop</button>
+        <h1>Tune Me!</h1>
+        <h5>A simple string instrument tuning app.</h5>
+        <div class="grid">
+            <div>
+                <label>Select your instrument:</label>
+                <select id="instruments">
+                </select>
+                <label>Select your tuning:</label>
+                <select id="tunings">
+                </select>
+            </div>
+            <div id="right">
+                <svg id="stringDiagram"></svg>
+                <br>
+                <div id="strings"></div>
+                <button class="stop contrast" onclick="stopTone()">Stop</button>
+            </div>
+        </div>
     </main>
 </body>
 
@@ -137,13 +156,60 @@
     };
 
 
-    const banjoTunings = {
-        "Standard (Open G)": ["G4", "D3", "G3", "B3", "D4"],
-        "Double C": ["G4", "C3", "G3", "C4", "D4"],
-        "Drop C": ["G4", "C3", "G3", "B3", "D4"],
-        "Open D": ["F#4", "D3", "F#3", "A3", "D4"],
-        "Open C": ["G4", "C3", "G3", "C4", "E4"],
-        "Sawmill (G Modal)": ["G4", "D3", "G3", "C4", "D4"],
+    const instruments = {
+        "Violin": {
+            "tunings": {
+                "Standard": ["G3", "D4", "A4", "E5"],
+            },
+            "widths": [6, 5, 4, 3],
+            "stringsPerCourse": 1,
+        },
+        "Viola": {
+            "tunings": {
+                "Standard": ["C3", "G3", "D4", "A4"],
+            },
+            "widths": [6, 5, 4, 3],
+            "stringsPerCourse": 1,
+        },
+        "Cello": {
+            "tunings": {
+                "Standard": ["C2", "G2", "D3", "A3"],
+            },
+            "widths": [6, 5, 4, 3],
+            "stringsPerCourse": 1,
+        },
+        "Mandolin": {
+            "tunings": {
+                "Standard": ["G3", "D4", "A4", "E5"],
+            },
+            "widths": [6, 5, 4, 3],
+            "stringsPerCourse": 2,
+        },
+        "Guitar": {
+            "tunings": {
+                "Standard": ["E2", "A2", "D3", "G3", "B3", "E4"],
+                "Drop D": ["D2", "A2", "D3", "G3", "B3", "E4"],
+                "Open D": ["D2", "A2", "D3", "F#3", "A3", "D4"],
+                "Open G": ["D2", "G2", "D3", "G3", "B3", "D4"],
+            },
+            "widths": [8, 7, 6, 5, 4, 3],
+            "stringsPerCourse": 1,
+        },
+        "Banjo": {
+            "tunings": {
+                "C tuning": ["G4", "C3", "G3", "B3", "D4"],
+                "Double C": ["G4", "C3", "G3", "C4", "D4"],
+                "Sawmill": ["G4", "D3", "G3", "C4", "D4"],
+                "Open D": ["F#4", "D3", "F#3", "A3", "D4"],
+                "Guitar": ["G4", "D3", "G3", "B3", "E4"],
+                "Willie Moore": ["G4", "D3", "G3", "A3", "D4"],
+                "Doc Bog's D": ["F#4", "D3", "G3", "A3", "D4"],
+                "Cumberland Gap": ["G4", "E3", "A3", "D4", "E4"],
+                "Open C": ["G4", "C3", "G3", "C4", "E4"],
+            },
+            "widths": [2, 6, 5, 4, 3],
+            "stringsPerCourse": 1,
+        },
     };
 
 
@@ -171,12 +237,76 @@
     }
 
 
+    const instrumentsSelect = document.getElementById("instruments");
     const tuningsSelect = document.getElementById("tunings");
-    for (const [name, tuning] of Object.entries(banjoTunings)) {
+    selectInstrument(Object.keys(instruments)[0]);
+
+    // setup instrument select
+    for (const [name, tuning] of Object.entries(instruments)) {
         const option = document.createElement("option");
         option.value = name;
         option.text = name;
-        tuningsSelect.appendChild(option);
+        instrumentsSelect.appendChild(option);
+    }
+
+    function setupTuningsSelect(instrument) {
+        tuningsSelect.innerHTML = "";
+        for (const [name, tuning] of Object.entries(instrument.tunings)) {
+            const option = document.createElement("option");
+            option.value = name;
+            option.text = name;
+            tuningsSelect.appendChild(option);
+        }
+    }
+
+    function selectInstrument(instrumentName) {
+        instrument = instruments[instrumentName];
+        tuning = instrument.tunings[Object.keys(instrument.tunings)[0]];
+        setupTuningsSelect(instrument);
+        selectTuning(tuning);
+        drawStrings(instrument.widths, instrument.stringsPerCourse);
+    }
+
+    function drawStrings(stringWidths, stringsPerCourse) {
+        // Get the SVG element
+        const svg = document.getElementById("stringDiagram");
+
+        // clear the svg
+        svg.innerHTML = "";
+
+        if (!svg) {
+            console.error('SVG element not found');
+            return;
+        }
+
+        const refWidth = document.getElementById("strings").offsetWidth;
+        svg.setAttribute('width', refWidth);
+
+        // Get SVG dimensions
+        const svgWidth = svg.clientWidth;
+        const svgHeight = svg.clientHeight;
+
+        const numCourses = stringWidths.length;
+        const courseSpacing = svgWidth / (numCourses + 1);
+        const stringSpacing = 2; // Spacing between strings in a course
+
+        stringWidths.forEach((width, courseIndex) => {
+            const courseX = courseSpacing * (courseIndex + 1);
+
+            for (let i = 0; i < stringsPerCourse; i++) {
+                const offsetX = (i - (stringsPerCourse - 1) / 2) * (stringSpacing + width);
+                const x = courseX + offsetX;
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', '0');
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', svgHeight);
+                line.setAttribute('stroke', 'black');
+                line.setAttribute('stroke-width', width);
+                svg.appendChild(line);
+            }
+        });
     }
 
     function selectTuning(tuning) {
@@ -192,11 +322,8 @@
         }
     }
 
-    tuningsSelect.onchange = () => {
-        const tuning = banjoTunings[tuningsSelect.value];
-        selectTuning(tuning);
-    };
-    selectTuning(Object.values(banjoTunings)[0]);
+    instrumentsSelect.onchange = () => { selectInstrument(instrumentsSelect.value) };
+
 </script>
 
 </html>
