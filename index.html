@@ -289,6 +289,7 @@
 
     const instrumentsSelect = document.getElementById("instruments");
     const tuningsSelect = document.getElementById("tunings");
+    let instrument;
     selectInstrument(Object.keys(instruments)[0]);
 
     // setup instrument select
@@ -373,6 +374,9 @@
     }
 
     instrumentsSelect.onchange = () => { selectInstrument(instrumentsSelect.value) };
+    tuningsSelect.onchange = () => { selectTuning(instrument.tunings[tuningsSelect.value]) };
+    instrumentsSelect.onclick = stopTone;
+    tuningsSelect.onclick = stopTone;
 
 </script>
 
