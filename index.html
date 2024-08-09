@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" />
+    <link rel="icon" type="image/png" href="favicon.png">
     <title>Tuner</title>
 </head>
 
@@ -29,18 +30,22 @@
         margin: 0 auto;
         width: 200px;
     }
+
+    #icon {
+        height: 1em;
+    }
 </style>
 
 <body>
     <main class="container">
-        <h1>Tune Me!</h1>
+        <h1><img id="icon" src="favicon.png"></img> Tune Me!</h1>
         <h5>A simple string instrument tuning app.</h5>
         <div class="grid">
             <div>
-                <label>Select your instrument:</label>
+                <label>Select instrument:</label>
                 <select id="instruments">
                 </select>
-                <label>Select your tuning:</label>
+                <label>Select tuning:</label>
                 <select id="tunings">
                 </select>
             </div>
