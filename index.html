@@ -68,6 +68,8 @@
 </body>
 
 <script>
+    const urlParams = new URLSearchParams(window.location.search);
+
     const noteFrequencies = {
         "C0": 16.35,
         "C#0": 17.32,
@@ -294,12 +296,13 @@
         gain.gain.linearRampToValueAtTime(0, now + 0.1);  // Release
     }
 
-
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
 
     const instrumentsSelect = document.getElementById("instruments");
     const tuningsSelect = document.getElementById("tunings");
     let instrument;
-    selectInstrument(Object.keys(instruments)[0]);
 
     // setup instrument select
     for (const [name, tuning] of Object.entries(instruments)) {
@@ -307,6 +310,13 @@
         option.value = name;
         option.text = name;
         instrumentsSelect.appendChild(option);
+    }
+
+    let paramInstrument = capitalizeFirstLetter(urlParams.get('instrument'));
+    if (paramInstrument in instruments) {
+        selectInstrument(paramInstrument);
+    } else {
+        selectInstrument(Object.keys(instruments)[0]);
     }
 
     function setupTuningsSelect(instrument) {
@@ -320,10 +330,11 @@
     }
 
     function selectInstrument(instrumentName) {
+        instrumentsSelect.value = instrumentName;
         instrument = instruments[instrumentName];
-        tuning = instrument.tunings[Object.keys(instrument.tunings)[0]];
+        let defaultTuning = instrument.tunings[Object.keys(instrument.tunings)[0]];
         setupTuningsSelect(instrument);
-        selectTuning(tuning);
+        selectTuning(defaultTuning);
         drawStrings(instrument.widths, instrument.stringsPerCourse);
     }
 
